@@ -1,4 +1,4 @@
-# ENSF381 — LAB 08 (27 Mar 2026)
+# ENSF381 — Assignment 4 (12 Apr 2026)
 
 ## Group Members
 
@@ -8,3 +8,9 @@
 - **Madiha Khan**
   * UCID: 30144428
   * Email: madiha.khan@ucalgary.ca
+  
+## Assignment Description
+
+The purpose of this assignment is to extend our Sweet Scoop React application from Assignment 3 into a simple fullstack 
+web application. We will move our application data to the backend, implement user registration and login, and connect 
+the frontend order flow to backend APIs.
