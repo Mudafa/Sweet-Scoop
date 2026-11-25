@@ -1,0 +1,36 @@
+# Frontend: stateless nginx + React build, so it scales freely (3 replicas).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels: { app: sweet-scoop, tier: frontend }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: sweet-scoop, tier: frontend }
+  template:
+    metadata:
+      labels: { app: sweet-scoop, tier: frontend }
+    spec:
+      containers:
+        - name: frontend
+          image: madiiha/sweet-scoop-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+---
+# NodePort exposes the app on http://<server-ip>:30080
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: NodePort
+  selector: { app: sweet-scoop, tier: frontend }
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080

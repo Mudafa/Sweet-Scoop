@@ -12,6 +12,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 BASE_URL = os.environ.get("SWEET_SCOOP_URL", "http://localhost:3000").rstrip("/")
 HEADLESS = os.environ.get("HEADLESS", "1") != "0"
+# Set in Docker/Jenkins (e.g. http://selenium:4444) to drive the selenium/standalone-chrome
+# container instead of a Chrome installed on this machine.
+SELENIUM_REMOTE_URL = os.environ.get("SELENIUM_REMOTE_URL")
 WAIT_SECONDS = 10
 VALID_PASSWORD = "Scoop@1234"
 
@@ -24,7 +27,12 @@ class SweetScoopTestCase(unittest.TestCase):
         if HEADLESS:
             options.add_argument("--headless=new")
         options.add_argument("--window-size=1400,1000")
-        self.driver = webdriver.Chrome(options=options)
+        if SELENIUM_REMOTE_URL:
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            self.driver = webdriver.Remote(command_executor=SELENIUM_REMOTE_URL, options=options)
+        else:
+            self.driver = webdriver.Chrome(options=options)
         # React re-renders can replace an element between finding and using it.
         self.wait = WebDriverWait(
             self.driver, WAIT_SECONDS, ignored_exceptions=[StaleElementReferenceException]

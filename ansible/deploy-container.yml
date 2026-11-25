@@ -1,0 +1,47 @@
+---
+# Stage 7 — run the app as Docker containers on the server (http://<ip>/).
+- hosts: app
+  become: true
+  name: Run Sweet Scoop containers
+  vars:
+    dockerhub_user: madiiha
+    image_tag: latest
+    backend_image: "{{ dockerhub_user }}/sweet-scoop-backend:{{ image_tag }}"
+    frontend_image: "{{ dockerhub_user }}/sweet-scoop-frontend:{{ image_tag }}"
+  tasks:
+    - name: Pull images from Docker Hub
+      command: "docker pull {{ item }}"
+      loop: ["{{ backend_image }}", "{{ frontend_image }}"]
+
+    - name: Create a Docker network so nginx can reach "backend" by name
+      shell: docker network inspect sweet-scoop >/dev/null 2>&1 || docker network create sweet-scoop
+
+    - name: Remove old containers (if any)
+      shell: docker rm -f backend frontend || true
+
+    - name: Run backend container
+      command: >
+        docker run -d --name backend --network sweet-scoop
+        --restart unless-stopped {{ backend_image }}
+
+    - name: Run frontend container on port 80
+      command: >
+        docker run -d --name frontend --network sweet-scoop -p 80:80
+        --restart unless-stopped {{ frontend_image }}
+
+    - name: Wait for the app to answer
+      uri:
+        url: http://localhost/api/
+        status_code: 200
+      register: health
+      retries: 10
+      delay: 3
+      until: health.status == 200
+
+    - name: Show running containers
+      command: docker ps
+      register: ps
+      changed_when: false
+
+    - debug:
+        msg: "{{ ps.stdout_lines }}"

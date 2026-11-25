@@ -1,3 +1,7 @@
+// Local dev (npm start) talks to Flask on :5000. In Docker/Kubernetes the image is
+// built with REACT_APP_API_BASE_URL=/api, so the browser calls the same server it
+// loaded the page from and nginx forwards /api/* to the backend. That keeps the
+// image independent of the server's IP address.
 const DEFAULT_BASE_URL = "http://localhost:5000";
 
 export const API_BASE_URL =
@@ -12,7 +16,8 @@ const ORDERS_PATHS = [process.env.REACT_APP_ORDERS_PATH, "/orders", "/api/orders
 
 function buildUrl(path, queryParams) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const url = new URL(`${API_BASE_URL}${normalizedPath}`);
+  // Second argument lets a relative base like "/api" resolve against the current page.
+  const url = new URL(`${API_BASE_URL}${normalizedPath}`, window.location.origin);
 
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {

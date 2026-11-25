@@ -1,0 +1,35 @@
+# Backend: 1 replica ON PURPOSE — users/carts/orders are stored in memory, so a second
+# pod would have its own separate data and logins would fail randomly.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels: { app: sweet-scoop, tier: backend }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: sweet-scoop, tier: backend }
+  template:
+    metadata:
+      labels: { app: sweet-scoop, tier: backend }
+    spec:
+      containers:
+        - name: backend
+          image: madiiha/sweet-scoop-backend:latest
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet: { path: /, port: 5000 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+---
+# ClusterIP service named "backend" — the frontend's nginx proxies /api/ to http://backend:5000
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector: { app: sweet-scoop, tier: backend }
+  ports:
+    - port: 5000
+      targetPort: 5000

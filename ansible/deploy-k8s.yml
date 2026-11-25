@@ -1,0 +1,34 @@
+---
+# Stage 8 — deploy the same images to Kubernetes (k3s) on the server (http://<ip>:30080/).
+- hosts: app
+  become: true
+  name: Deploy Sweet Scoop to Kubernetes
+  vars:
+    dockerhub_user: madiiha
+    image_tag: latest
+    k8s_dir: /opt/sweet-scoop/k8s
+  tasks:
+    - name: Copy Kubernetes manifests to the server
+      copy:
+        src: "{{ playbook_dir }}/../k8s/"
+        dest: "{{ k8s_dir }}/"
+
+    - name: Apply manifests (Deployments + Services)
+      command: "k3s kubectl apply -f {{ k8s_dir }}/"
+
+    - name: Point the Deployments at this build's images
+      command: "k3s kubectl set image deployment/{{ item }} {{ item }}={{ dockerhub_user }}/sweet-scoop-{{ item }}:{{ image_tag }}"
+      loop: [backend, frontend]
+
+    - name: Wait for rollouts to finish
+      command: "k3s kubectl rollout status deployment/{{ item }} --timeout=180s"
+      loop: [backend, frontend]
+      changed_when: false
+
+    - name: Show cluster state
+      command: k3s kubectl get deployments,pods,services -o wide
+      register: state
+      changed_when: false
+
+    - debug:
+        msg: "{{ state.stdout_lines }}"

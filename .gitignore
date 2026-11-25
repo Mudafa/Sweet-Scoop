@@ -5,3 +5,10 @@ lab06/
 venv/
 __pycache__/
 *.mov
+
+# DevOps pipeline artifacts
+.terraform/
+*.tfstate*
+*.pem
+server_ip.txt
+ansible/inventory.ini
